@@ -41,7 +41,8 @@ export const grays = {
 };
 
 export const common = {
-  baseFontSize: 12
+  baseFontSize: 12,
+  shadowColor: 'rgba(0, 0, 0, 0.16)'
 };
 
 export const remSize = size => `${size / common.baseFontSize}rem`;
@@ -62,6 +63,7 @@ export default {
     colors,
     ...common,
     primaryTextColor: grays.dark,
+    backgroundColor: grays.lighter,
 
     Button: {
       default: {
@@ -95,12 +97,18 @@ export default {
         background: grays.light,
         border: grays.middleLight,
       },
-    }
+    },
+    Modal: {
+      background: grays.light,
+      border: grays.middleLight
+    },
+    Separator: grays.middleLight,
   },
   [Theme.dark]: {
     colors,
     ...common,
     primaryTextColor: grays.lightest,
+    backgroundColor: grays.darker,
 
     Button: {
       default: {
@@ -134,12 +142,18 @@ export default {
         background: grays.dark,
         border: grays.middleDark,
       },
-    }
+    },
+    Modal: {
+      background: grays.dark,
+      border: grays.middleDark
+    },
+    Separator: grays.middleDark,
   },
   [Theme.contrast]: {
     colors,
     ...common,
     primaryTextColor: grays.lightest,
+    backgroundColor: grays.darker,
 
     Button: {
       default: {
@@ -173,6 +187,11 @@ export default {
         background: grays.dark,
         border: grays.middleDark,
       },
-    }
+    },
+    Modal: {
+      background: grays.dark,
+      border: grays.middleDark
+    },
+    Separator: grays.middleDark,
   },
 };
