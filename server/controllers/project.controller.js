@@ -30,14 +30,15 @@ export function updateProject(req, res) {
         $set: req.body
       },
       {
-        new: true
+        new: true,
+        runValidators: true
       }
     )
       .populate('user', 'username')
       .exec((updateProjectErr, updatedProject) => {
         if (updateProjectErr) {
           console.log(updateProjectErr);
-          res.json({ success: false });
+          res.status(400).json({ success: false });
           return;
         }
         if (req.body.files && updatedProject.files.length !== req.body.files.length) {
@@ -50,7 +51,7 @@ export function updateProject(req, res) {
           updatedProject.save((innerErr, savedProject) => {
             if (innerErr) {
               console.log(innerErr);
-              res.json({ success: false });
+              res.status(400).json({ success: false });
               return;
             }
             res.json(savedProject);
@@ -63,25 +64,21 @@ export function updateProject(req, res) {
 }
 
 export function getProject(req, res) {
-  const projectId = req.params.project_id;
-  Project.findById(projectId)
-    .populate('user', 'username')
-    .exec((err, project) => { // eslint-disable-line
-      if (err) {
-        return res.status(404).send({ message: 'Project with that id does not exist' });
-      } else if (!project) {
-        Project.findOne({ slug: projectId })
-          .populate('user', 'username')
-          .exec((innerErr, projectBySlug) => {
-            if (innerErr || !projectBySlug) {
-              return res.status(404).send({ message: 'Project with that id does not exist' });
-            }
-            return res.json(projectBySlug);
-          });
-      } else {
+  const { project_id: projectId, username } = req.params;
+  User.findByUsername(username, (err, user) => { // eslint-disable-line
+    if (!user) {
+      return res.status(404).send({ message: 'Project with that username does not exist' });
+    }
+    Project.findOne({ user: user._id, $or: [{ _id: projectId }, { slug: projectId }] })
+      .populate('user', 'username')
+      .exec((err, project) => { // eslint-disable-line
+        if (err) {
+          console.log(err);
+          return res.status(404).send({ message: 'Project with that id does not exist' });
+        }
         return res.json(project);
-      }
-    });
+      });
+  });
 }
 
 export function getProjectsForUserId(userId) {
@@ -145,23 +142,15 @@ export function projectExists(projectId, callback) {
 }
 
 export function projectForUserExists(username, projectId, callback) {
-  User.findOne({ username }, (err, user) => {
+  User.findByUsername(username, (err, user) => {
     if (!user) {
       callback(false);
       return;
     }
-    Project.findOne({ _id: projectId, user: user._id }, (innerErr, project) => {
+    Project.findOne({ user: user._id, $or: [{ _id: projectId }, { slug: projectId }] }, (innerErr, project) => {
       if (project) {
         callback(true);
-        return;
       }
-      Project.findOne({ slug: projectId, user: user._id }, (slugError, projectBySlug) => {
-        if (projectBySlug) {
-          callback(true);
-          return;
-        }
-        callback(false);
-      });
     });
   });
 }

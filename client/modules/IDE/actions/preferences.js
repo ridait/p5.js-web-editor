@@ -1,11 +1,9 @@
-import axios from 'axios';
+import i18next from 'i18next';
+import apiClient from '../../../utils/apiClient';
 import * as ActionTypes from '../../../constants';
 
-const __process = (typeof global !== 'undefined' ? global : window).process;
-const ROOT_URL = __process.env.API_URL;
-
 function updatePreferences(formParams, dispatch) {
-  axios.put(`${ROOT_URL}/preferences`, formParams, { withCredentials: true })
+  apiClient.put('/preferences', formParams)
     .then(() => {
     })
     .catch((error) => {
@@ -210,6 +208,25 @@ export function setAllAccessibleOutput(value) {
     dispatch(setTextOutput(value));
     dispatch(setGridOutput(value));
     dispatch(setSoundOutput(value));
+  };
+}
+
+export function setLanguage(value, { persistPreference = true } = {}) {
+  return (dispatch, getState) => {
+    i18next.changeLanguage(value);
+    dispatch({
+      type: ActionTypes.SET_LANGUAGE,
+      language: value
+    });
+    const state = getState();
+    if (persistPreference && state.user.authenticated) {
+      const formParams = {
+        preferences: {
+          language: value
+        }
+      };
+      updatePreferences(formParams, dispatch);
+    }
   };
 }
 

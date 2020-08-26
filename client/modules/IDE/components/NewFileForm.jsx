@@ -1,6 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import { domOnlyProps } from '../../../utils/reduxFormUtils';
+
+import Button from '../../../common/Button';
 
 class NewFileForm extends React.Component {
   constructor(props) {
@@ -13,7 +16,10 @@ class NewFileForm extends React.Component {
   }
 
   render() {
-    const { fields: { name }, handleSubmit } = this.props;
+    const {
+      fields: { name },
+      handleSubmit,
+    } = this.props;
     return (
       <form
         className="new-file-form"
@@ -23,24 +29,28 @@ class NewFileForm extends React.Component {
         }}
       >
         <div className="new-file-form__input-wrapper">
-          <label className="new-file-form__name-label" htmlFor="name">Name:</label>
+          <label className="new-file-form__name-label" htmlFor="name">
+            Name:
+          </label>
           <input
             className="new-file-form__name-input"
             id="name"
             type="text"
-            placeholder="Name"
+            placeholder={this.props.t('NewFileForm.Placeholder')}
             maxLength="128"
             {...domOnlyProps(name)}
-            ref={(element) => { this.fileName = element; }}
+            ref={(element) => {
+              this.fileName = element;
+            }}
           />
-          <input
+          <Button
             type="submit"
-            value="Add File"
-            aria-label="add file"
-            className="new-file-form__submit"
-          />
+          >{this.props.t('NewFileForm.AddFileSubmit')}
+          </Button>
         </div>
-        {name.touched && name.error && <span className="form-error">{name.error}</span>}
+        {name.touched && name.error && (
+          <span className="form-error">{name.error}</span>
+        )}
       </form>
     );
   }
@@ -52,7 +62,8 @@ NewFileForm.propTypes = {
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   createFile: PropTypes.func.isRequired,
-  focusOnModal: PropTypes.func.isRequired
+  focusOnModal: PropTypes.func.isRequired,
+  t: PropTypes.func.isRequired
 };
 
-export default NewFileForm;
+export default withTranslation()(NewFileForm);

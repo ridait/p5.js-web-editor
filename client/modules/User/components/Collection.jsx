@@ -5,7 +5,11 @@ import { Helmet } from 'react-helmet';
 import { connect } from 'react-redux';
 import { Link } from 'react-router';
 import { bindActionCreators } from 'redux';
+import { withTranslation } from 'react-i18next';
 import classNames from 'classnames';
+
+import Button from '../../../common/Button';
+import { DropdownArrowIcon } from '../../../common/icons';
 import * as ProjectActions from '../../IDE/actions/project';
 import * as ProjectsActions from '../../IDE/actions/projects';
 import * as CollectionsActions from '../../IDE/actions/collections';
@@ -20,12 +24,11 @@ import AddToCollectionSketchList from '../../IDE/components/AddToCollectionSketc
 import CopyableInput from '../../IDE/components/CopyableInput';
 import { SketchSearchbar } from '../../IDE/components/Searchbar';
 
-import DropdownArrowIcon from '../../../images/down-arrow.svg';
 import ArrowUpIcon from '../../../images/sort-arrow-up.svg';
 import ArrowDownIcon from '../../../images/sort-arrow-down.svg';
 import RemoveIcon from '../../../images/close.svg';
 
-const ShareURL = ({ value }) => {
+const ShareURL = ({ value, t }) => {
   const [showURL, setShowURL] = useState(false);
   const node = useRef();
 
@@ -50,17 +53,15 @@ const ShareURL = ({ value }) => {
 
   return (
     <div className="collection-share" ref={node}>
-      <button
-        className="collection-share__button"
+      <Button
         onClick={() => setShowURL(!showURL)}
-        aria-label="Show collection share URL"
+        iconAfter={<DropdownArrowIcon />}
       >
-        <span>Share</span>
-        <DropdownArrowIcon className="collection-share__arrow" focusable="false" aria-hidden="true" />
-      </button>
+        {t('Collection.Share')}
+      </Button>
       { showURL &&
         <div className="collection__share-dropdown">
-          <CopyableInput value={value} label="Link to Collection" />
+          <CopyableInput value={value} label={t('Collection.URLLink')} />
         </div>
       }
     </div>
@@ -69,43 +70,53 @@ const ShareURL = ({ value }) => {
 
 ShareURL.propTypes = {
   value: PropTypes.string.isRequired,
+  t: PropTypes.func.isRequired
 };
 
-class CollectionItemRowBase extends React.Component {
-  handleSketchRemove = () => {
-    if (window.confirm(`Are you sure you want to remove "${this.props.item.project.name}" from this collection?`)) {
-      this.props.removeFromCollection(this.props.collection.id, this.props.item.project.id);
+const CollectionItemRowBase = ({
+  collection, item, isOwner, removeFromCollection, t
+}) => {
+  const projectIsDeleted = item.isDeleted;
+
+  const handleSketchRemove = () => {
+    const name = projectIsDeleted ? 'deleted sketch' : item.project.name;
+
+    if (window.confirm(t('Collection.DeleteFromCollection', { name_sketch: name }))) {
+      removeFromCollection(collection.id, item.projectId);
     }
-  }
+  };
 
-  render() {
-    const { item } = this.props;
-    const sketchOwnerUsername = item.project.user.username;
-    const sketchUrl = `/${item.project.user.username}/sketches/${item.project.id}`;
+  const name = projectIsDeleted ? <span>{t('Collection.SketchDeleted')}</span> : (
+    <Link to={`/${item.project.user.username}/sketches/${item.projectId}`}>
+      {item.project.name}
+    </Link>
+  );
 
-    return (
-      <tr
-        className="sketches-table__row"
-      >
-        <th scope="row">
-          <Link to={sketchUrl}>
-            {item.project.name}
-          </Link>
-        </th>
-        <td>{format(new Date(item.createdAt), 'MMM D, YYYY h:mm A')}</td>
-        <td>{sketchOwnerUsername}</td>
-        <td className="collection-row__action-column ">
+  const sketchOwnerUsername = projectIsDeleted ? null : item.project.user.username;
+
+  return (
+    <tr
+      className={`sketches-table__row ${projectIsDeleted ? 'is-deleted' : ''}`}
+    >
+      <th scope="row">
+        {name}
+      </th>
+      <td>{format(new Date(item.createdAt), 'MMM D, YYYY h:mm A')}</td>
+      <td>{sketchOwnerUsername}</td>
+      <td className="collection-row__action-column ">
+        {isOwner &&
           <button
             className="collection-row__remove-button"
-            onClick={this.handleSketchRemove}
-            aria-label="Remove sketch from collection"
+            onClick={handleSketchRemove}
+            aria-label={t('Collection.SketchRemoveARIA')}
           >
             <RemoveIcon focusable="false" aria-hidden="true" />
           </button>
-        </td>
-      </tr>);
-  }
-}
+        }
+      </td>
+    </tr>);
+};
+
 
 CollectionItemRowBase.propTypes = {
   collection: PropTypes.shape({
@@ -114,19 +125,23 @@ CollectionItemRowBase.propTypes = {
   }).isRequired,
   item: PropTypes.shape({
     createdAt: PropTypes.string.isRequired,
+    projectId: PropTypes.string.isRequired,
+    isDeleted: PropTypes.bool.isRequired,
     project: PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       user: PropTypes.shape({
         username: PropTypes.string.isRequired
-      })
+      }),
     }).isRequired,
   }).isRequired,
+  isOwner: PropTypes.bool.isRequired,
   user: PropTypes.shape({
     username: PropTypes.string,
     authenticated: PropTypes.bool.isRequired
   }).isRequired,
-  removeFromCollection: PropTypes.func.isRequired
+  removeFromCollection: PropTypes.func.isRequired,
+  t: PropTypes.func.isRequired
 };
 
 function mapDispatchToPropsSketchListRow(dispatch) {
@@ -151,9 +166,9 @@ class Collection extends React.Component {
 
   getTitle() {
     if (this.props.username === this.props.user.username) {
-      return 'p5.js Web Editor | My collections';
+      return this.props.t('Collection.Title');
     }
-    return `p5.js Web Editor | ${this.props.username}'s collections`;
+    return this.props.t('Collection.AnothersTitle', { anotheruser: this.props.username });
   }
 
   getUsername() {
@@ -245,28 +260,28 @@ class Collection extends React.Component {
                     InputComponent="textarea"
                     value={description}
                     onChange={handleEditCollectionDescription}
-                    emptyPlaceholder="Add description"
+                    emptyPlaceholder={this.props.t('Collection.DescriptionPlaceholder')}
                   /> :
                   description
               }
             </p>
 
-            <p className="collection-metadata__user">Collection by{' '}
+            <p className="collection-metadata__user">{this.props.t('Collection.By')}
               <Link to={`${hostname}/${username}/sketches`}>{owner.username}</Link>
             </p>
 
-            <p className="collection-metadata__user">{items.length} sketch{items.length === 1 ? '' : 'es'}</p>
+            <p className="collection-metadata__user">{this.props.t('Collection.NumSketches', { count: items.length }) }</p>
           </div>
 
           <div className="collection-metadata__column--right">
             <p className="collection-metadata__share">
-              <ShareURL value={`${baseURL}${id}`} />
+              <ShareURL value={`${baseURL}${id}`} t={this.props.t} />
             </p>
             {
               this.isOwner() &&
-              <button className="collection-metadata__add-button" onClick={this.showAddSketches}>
-                Add Sketch
-              </button>
+              <Button onClick={this.showAddSketches}>
+                {this.props.t('Collection.AddSketch')}
+              </Button>
             }
           </div>
         </div>
@@ -292,7 +307,7 @@ class Collection extends React.Component {
       this.props.collection.items.length > 0;
 
     if (!isLoading && !hasCollectionItems) {
-      return (<p className="collection-empty-message">No sketches in collection</p>);
+      return (<p className="collection-empty-message">{this.props.t('Collection.NoSketches')}</p>);
     }
     return null;
   }
@@ -302,14 +317,14 @@ class Collection extends React.Component {
     let buttonLabel;
     if (field !== fieldName) {
       if (field === 'name') {
-        buttonLabel = `Sort by ${displayName} ascending.`;
+        buttonLabel = this.props.t('Collection.ButtonLabelAscendingARIA', { displayName });
       } else {
-        buttonLabel = `Sort by ${displayName} descending.`;
+        buttonLabel = this.props.t('Collection.ButtonLabelDescendingARIA', { displayName });
       }
     } else if (direction === SortingActions.DIRECTION.ASC) {
-      buttonLabel = `Sort by ${displayName} descending.`;
+      buttonLabel = this.props.t('Collection.ButtonLabelDescendingARIA', { displayName });
     } else {
-      buttonLabel = `Sort by ${displayName} ascending.`;
+      buttonLabel = this.props.t('Collection.ButtonLabelAscendingARIA', { displayName });
     }
     return buttonLabel;
   }
@@ -317,7 +332,7 @@ class Collection extends React.Component {
   _renderFieldHeader(fieldName, displayName) {
     const { field, direction } = this.props.sorting;
     const headerClass = classNames({
-      'sketches-table__header': true,
+      'arrowDown': true,
       'sketches-table__header--selected': field === fieldName
     });
     const buttonLabel = this._getButtonLabel(fieldName, displayName);
@@ -330,10 +345,10 @@ class Collection extends React.Component {
         >
           <span className={headerClass}>{displayName}</span>
           {field === fieldName && direction === SortingActions.DIRECTION.ASC &&
-            <ArrowUpIcon role="img" aria-label="Ascending" focusable="false" />
+            <ArrowUpIcon role="img" aria-label={this.props.t('Collection.DirectionAscendingARIA')} focusable="false" />
           }
           {field === fieldName && direction === SortingActions.DIRECTION.DESC &&
-            <ArrowDownIcon role="img" aria-label="Descending" focusable="false" />
+            <ArrowDownIcon role="img" aria-label={this.props.t('Collection.DirectionDescendingARIA')} focusable="false" />
           }
         </button>
       </th>
@@ -342,6 +357,7 @@ class Collection extends React.Component {
 
   render() {
     const title = this.hasCollection() ? this.getCollectionName() : null;
+    const isOwner = this.isOwner();
 
     return (
       <main className="collection-container" data-has-items={this.hasCollectionItems() ? 'true' : 'false'}>
@@ -358,9 +374,9 @@ class Collection extends React.Component {
                 <table className="sketches-table" summary="table containing all collections">
                   <thead>
                     <tr>
-                      {this._renderFieldHeader('name', 'Name')}
-                      {this._renderFieldHeader('createdAt', 'Date Added')}
-                      {this._renderFieldHeader('user', 'Owner')}
+                      {this._renderFieldHeader('name', this.props.t('Collection.HeaderName'))}
+                      {this._renderFieldHeader('createdAt', this.props.t('Collection.HeaderCreatedAt'))}
+                      {this._renderFieldHeader('user', this.props.t('Collection.HeaderUser'))}
                       <th scope="col"></th>
                     </tr>
                   </thead>
@@ -372,6 +388,8 @@ class Collection extends React.Component {
                         user={this.props.user}
                         username={this.getUsername()}
                         collection={this.props.collection}
+                        isOwner={isOwner}
+                        t={this.props.t}
                       />))}
                   </tbody>
                 </table>
@@ -379,14 +397,15 @@ class Collection extends React.Component {
               {
                 this.state.isAddingSketches && (
                   <Overlay
-                    title="Add sketch"
+                    title={this.props.t('Collection.AddSketch')}
                     actions={<SketchSearchbar />}
                     closeOverlay={this.hideAddSketches}
                     isFixedHeight
                   >
-                    <div className="collection-add-sketch">
-                      <AddToCollectionSketchList username={this.props.username} collection={this.props.collection} />
-                    </div>
+                    <AddToCollectionSketchList
+                      username={this.props.username}
+                      collection={this.props.collection}
+                    />
                   </Overlay>
                 )
               }
@@ -422,7 +441,8 @@ Collection.propTypes = {
   sorting: PropTypes.shape({
     field: PropTypes.string.isRequired,
     direction: PropTypes.string.isRequired
-  }).isRequired
+  }).isRequired,
+  t: PropTypes.func.isRequired
 };
 
 Collection.defaultProps = {
@@ -453,4 +473,4 @@ function mapDispatchToProps(dispatch) {
   );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Collection);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(Collection));

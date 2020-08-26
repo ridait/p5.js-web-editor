@@ -3,12 +3,13 @@ import React from 'react';
 import Dropzone from 'dropzone';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import * as UploaderActions from '../actions/uploader';
+import getConfig from '../../../utils/getConfig';
 import { fileExtensionsAndMimeTypes } from '../../../../server/utils/fileUtils';
 
-const __process = (typeof global !== 'undefined' ? global : window).process;
-const s3Bucket = __process.env.S3_BUCKET_URL_BASE ||
-                 `https://s3-${__process.env.AWS_REGION}.amazonaws.com/${__process.env.S3_BUCKET}/`;
+const s3Bucket = getConfig('S3_BUCKET_URL_BASE') ||
+                 `https://s3-${getConfig('AWS_REGION')}.amazonaws.com/${getConfig('S3_BUCKET')}/`;
 
 class FileUploader extends React.Component {
   componentDidMount() {
@@ -30,7 +31,7 @@ class FileUploader extends React.Component {
       thumbnailWidth: 200,
       thumbnailHeight: 200,
       acceptedFiles: fileExtensionsAndMimeTypes,
-      dictDefaultMessage: 'Drop files here or click to use the file browser',
+      dictDefaultMessage: this.props.t('FileUploader.DictDefaultMessage'),
       accept: this.props.dropzoneAcceptCallback.bind(this, userId),
       sending: this.props.dropzoneSendingCallback,
       complete: this.props.dropzoneCompleteCallback
@@ -59,7 +60,8 @@ FileUploader.propTypes = {
   }),
   user: PropTypes.shape({
     id: PropTypes.string
-  })
+  }),
+  t: PropTypes.func.isRequired
 };
 
 FileUploader.defaultProps = {
@@ -84,4 +86,4 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(UploaderActions, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(FileUploader);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(FileUploader));

@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import { domOnlyProps } from '../../../utils/reduxFormUtils';
+import Button from '../../../common/Button';
 
 function AccountForm(props) {
   const {
@@ -12,7 +14,8 @@ function AccountForm(props) {
     initiateVerification,
     submitting,
     invalid,
-    pristine
+    pristine,
+    t
   } = props;
 
   const handleInitiateVerification = (evt) => {
@@ -23,91 +26,93 @@ function AccountForm(props) {
   return (
     <form className="form" onSubmit={handleSubmit(props.updateSettings)}>
       <p className="form__field">
-        <label htmlFor="email" className="form__label">Email</label>
+        <label htmlFor="email" className="form__label">{t('AccountForm.Email')}</label>
         <input
           className="form__input"
-          aria-label="email"
+          aria-label={t('AccountForm.EmailARIA')}
           type="text"
           id="email"
           {...domOnlyProps(email)}
         />
-        {email.touched && email.error && <span className="form-error">{email.error}</span>}
+        {email.touched && email.error && (
+          <span className="form-error">{email.error}</span>
+        )}
       </p>
       {
         user.verified !== 'verified' &&
           (
             <p className="form__context">
-              <span className="form__status">Unconfirmed.</span>
+              <span className="form__status">{t('AccountForm.Unconfirmed')}</span>
               {
                 user.emailVerificationInitiate === true ?
                   (
-                    <span className="form__status"> Confirmation sent, check your email.</span>
+                    <span className="form__status"> {t('AccountForm.EmailSent')}</span>
                   ) :
                   (
-                    <button
-                      className="form__action"
+                    <Button
                       onClick={handleInitiateVerification}
-                    >Resend confirmation email
-                    </button>
+                    >{t('AccountForm.Resend')}
+                    </Button>
                   )
               }
             </p>
           )
       }
       <p className="form__field">
-        <label htmlFor="username" className="form__label">User Name</label>
+        <label htmlFor="username" className="form__label">{t('AccountForm.UserName')}</label>
         <input
           className="form__input"
-          aria-label="username"
+          aria-label={t('AccountForm.UserNameARIA')}
           type="text"
           id="username"
           defaultValue={username}
           {...domOnlyProps(username)}
         />
-        {username.touched && username.error && <span className="form-error">{username.error}</span>}
+        {username.touched && username.error && (
+          <span className="form-error">{username.error}</span>
+        )}
       </p>
       <p className="form__field">
-        <label htmlFor="current password" className="form__label">Current Password</label>
+        <label htmlFor="current password" className="form__label">{t('AccountForm.CurrentPassword')}</label>
         <input
           className="form__input"
-          aria-label="currentPassword"
+          aria-label={t('AccountForm.CurrentPasswordARIA')}
           type="password"
           id="currentPassword"
           {...domOnlyProps(currentPassword)}
         />
-        {
-          currentPassword.touched &&
-          currentPassword.error &&
+        {currentPassword.touched && currentPassword.error && (
           <span className="form-error">{currentPassword.error}</span>
-        }
+        )}
       </p>
       <p className="form__field">
-        <label htmlFor="new password" className="form__label">New Password</label>
+        <label htmlFor="new password" className="form__label">{t('AccountForm.NewPassword')}</label>
         <input
           className="form__input"
-          aria-label="newPassword"
+          aria-label={t('AccountForm.NewPasswordARIA')}
           type="password"
           id="newPassword"
           {...domOnlyProps(newPassword)}
         />
-        {newPassword.touched && newPassword.error && <span className="form-error">{newPassword.error}</span>}
+        {newPassword.touched && newPassword.error && (
+          <span className="form-error">{newPassword.error}</span>
+        )}
       </p>
-      <input
+      <Button
         type="submit"
         disabled={submitting || invalid || pristine}
-        value="Save All Settings"
-        aria-label="updateSettings"
-      />
+      >{t('AccountForm.SubmitSaveAllSettings')}
+      </Button>
     </form>
   );
 }
 
 AccountForm.propTypes = {
   fields: PropTypes.shape({
-    username: PropTypes.object.isRequired,
-    email: PropTypes.object.isRequired,
-    currentPassword: PropTypes.object.isRequired,
-    newPassword: PropTypes.object.isRequired,
+    username: PropTypes.object.isRequired, // eslint-disable-line
+    email: PropTypes.object.isRequired, // eslint-disable-line
+    currentPassword: PropTypes.object.isRequired, // eslint-disable-line
+    newPassword: PropTypes.object.isRequired, // eslint-disable-line
   }).isRequired,
   user: PropTypes.shape({
     verified: PropTypes.number.isRequired,
@@ -119,12 +124,13 @@ AccountForm.propTypes = {
   submitting: PropTypes.bool,
   invalid: PropTypes.bool,
   pristine: PropTypes.bool,
+  t: PropTypes.func.isRequired
 };
 
 AccountForm.defaultProps = {
   submitting: false,
   pristine: true,
-  invalid: false
+  invalid: false,
 };
 
-export default AccountForm;
+export default withTranslation()(AccountForm);

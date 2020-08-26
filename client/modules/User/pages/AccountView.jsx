@@ -3,29 +3,30 @@ import React from 'react';
 import { reduxForm } from 'redux-form';
 import { bindActionCreators } from 'redux';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-import axios from 'axios';
 import { Helmet } from 'react-helmet';
+import { withTranslation } from 'react-i18next';
 import { updateSettings, initiateVerification, createApiKey, removeApiKey } from '../actions';
 import AccountForm from '../components/AccountForm';
+import apiClient from '../../../utils/apiClient';
 import { validateSettings } from '../../../utils/reduxFormUtils';
-import GithubButton from '../components/GithubButton';
-import GoogleButton from '../components/GoogleButton';
+import SocialAuthButton from '../components/SocialAuthButton';
 import APIKeyForm from '../components/APIKeyForm';
 import Nav from '../../../components/Nav';
-
-const __process = (typeof global !== 'undefined' ? global : window).process;
-const ROOT_URL = __process.env.API_URL;
 
 function SocialLoginPanel(props) {
   return (
     <React.Fragment>
       <AccountForm {...props} />
-      <h2 className="form-container__divider">Social Login</h2>
+      {/* eslint-disable-next-line react/prop-types */}
+      <h2 className="form-container__divider">{props.t('AccountView.SocialLogin')}</h2>
       <p className="account__social-text">
-        Use your GitHub or Google account to log into the p5.js Web Editor.
+        {/* eslint-disable-next-line react/prop-types */}
+        {props.t('AccountView.SocialLoginDescription')}
       </p>
-      <GithubButton buttonText="Login with GitHub" />
-      <GoogleButton buttonText="Login with Google" />
+      <div className="account__social-stack">
+        <SocialAuthButton service={SocialAuthButton.services.github} />
+        <SocialAuthButton service={SocialAuthButton.services.google} />
+      </div>
     </React.Fragment>
   );
 }
@@ -41,21 +42,21 @@ class AccountView extends React.Component {
     return (
       <div className="account-settings__container">
         <Helmet>
-          <title>p5.js Web Editor | Account Settings</title>
+          <title>{this.props.t('AccountView.Title')}</title>
         </Helmet>
 
         <Nav layout="dashboard" />
 
         <main className="account-settings">
           <header className="account-settings__header">
-            <h1 className="account-settings__title">Account Settings</h1>
+            <h1 className="account-settings__title">{this.props.t('AccountView.Settings')}</h1>
           </header>
           {accessTokensUIEnabled &&
             <Tabs className="account__tabs">
               <TabList>
                 <div className="tabs__titles">
-                  <Tab><h4 className="tabs__title">Account</h4></Tab>
-                  {accessTokensUIEnabled && <Tab><h4 className="tabs__title">Access Tokens</h4></Tab>}
+                  <Tab><h4 className="tabs__title">{this.props.t('AccountView.AccountTab')}</h4></Tab>
+                  {accessTokensUIEnabled && <Tab><h4 className="tabs__title">{this.props.t('AccountView.AccessTokensTab')}</h4></Tab>}
                 </div>
               </TabList>
               <TabPanel>
@@ -95,7 +96,7 @@ function asyncValidate(formProps, dispatch, props) {
     const queryParams = {};
     queryParams[fieldToValidate] = formProps[fieldToValidate];
     queryParams.check_type = fieldToValidate;
-    return axios.get(`${ROOT_URL}/signup/duplicate_check`, { params: queryParams })
+    return apiClient.get('/signup/duplicate_check', { params: queryParams })
       .then((response) => {
         if (response.data.exists) {
           const error = {};
@@ -109,13 +110,14 @@ function asyncValidate(formProps, dispatch, props) {
 
 AccountView.propTypes = {
   previousPath: PropTypes.string.isRequired,
-  theme: PropTypes.string.isRequired
+  theme: PropTypes.string.isRequired,
+  t: PropTypes.func.isRequired
 };
 
-export default reduxForm({
+export default withTranslation()(reduxForm({
   form: 'updateAllSettings',
   fields: ['username', 'email', 'currentPassword', 'newPassword'],
   validate: validateSettings,
   asyncValidate,
   asyncBlurFields: ['username', 'email', 'currentPassword']
-}, mapStateToProps, mapDispatchToProps)(AccountView);
+}, mapStateToProps, mapDispatchToProps)(AccountView));

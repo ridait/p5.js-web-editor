@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { throttle } from 'lodash';
-
+import { withTranslation } from 'react-i18next';
+import i18next from 'i18next';
 import SearchIcon from '../../../../images/magnifyingglass.svg';
+
 
 class Searchbar extends React.Component {
   constructor(props) {
@@ -23,20 +25,13 @@ class Searchbar extends React.Component {
     });
   }
 
-  handleSearchEnter = (e) => {
-    if (e.key === 'Enter') {
-      this.searchChange();
-    }
-  }
-
   searchChange = () => {
-    if (this.state.searchValue.trim().length === 0) return;
     this.props.setSearchTerm(this.state.searchValue.trim());
   };
 
   handleSearchChange = (e) => {
     this.setState({ searchValue: e.target.value }, () => {
-      this.throttledSearchChange(this.state.searchValue);
+      this.throttledSearchChange(this.state.searchValue.trim());
     });
   }
 
@@ -53,12 +48,11 @@ class Searchbar extends React.Component {
           value={searchValue}
           placeholder={this.props.searchLabel}
           onChange={this.handleSearchChange}
-          onKeyUp={this.handleSearchEnter}
         />
         <button
           className="searchbar__clear-button"
           onClick={this.handleResetSearch}
-        >clear
+        >{this.props.t('Searchbar.ClearTerm')}
         </button>
       </div>
     );
@@ -70,10 +64,11 @@ Searchbar.propTypes = {
   setSearchTerm: PropTypes.func.isRequired,
   resetSearchTerm: PropTypes.func.isRequired,
   searchLabel: PropTypes.string,
+  t: PropTypes.func.isRequired
 };
 
 Searchbar.defaultProps = {
-  searchLabel: 'Search sketches...',
+  searchLabel: i18next.t('Searchbar.SearchSketch')
 };
 
-export default Searchbar;
+export default withTranslation()(Searchbar);
